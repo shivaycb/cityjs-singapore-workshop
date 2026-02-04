@@ -34,7 +34,7 @@ This project supports two env variables in a `.env` file in the root of the proj
 
 ## Dependencies
 
-**CityJS Singapore Workshop** is a [React](https://react.dev/) Application that uses [tailwindcss](https://tailwindcss.com/) for styling.
+**CityJS Singapore Workshop AI Agent** is a [React](https://react.dev/) Application that uses [tailwindcss](https://tailwindcss.com/) for styling.
 
 ### Key dependencies
 *   **[React](https://react.dev/)**: For building the user interface.

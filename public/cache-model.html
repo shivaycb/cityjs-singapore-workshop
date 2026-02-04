@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache AI Model</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        progress { width: 100%; height: 30px; }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; font-size: 14px; }
+        .response { background: #f5f5f5; padding: 15px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>🤖 Cache Gemma 2 9B Model</h1>
+    
+    <div class="section">
+        <h2>Step 1: Cache the Model</h2>
+        <p>Click the button to pre-cache the model. This will take a few minutes.</p>
+        
+        <button onclick="cacheModel()">Start Caching</button>
+        <div id="status"></div>
+        <progress id="progress" style="display:none;"></progress>
+    </div>
+
+    <div class="section" id="test-section" style="display:none;">
+        <h2>Step 2: Test the Model</h2>
+        <p>Send a test prompt to verify the model is working correctly.</p>
+        
+        <input type="text" id="prompt" placeholder="Enter a test prompt..." value="What is the capital of France?">
+        <button onclick="testModel()">Send Prompt</button>
+        <div id="test-status"></div>
+        <div id="response"></div>
+    </div>
+
+    <script type="module">
+        let engine = null;
+
+        window.cacheModel = async function() {
+            const statusDiv = document.getElementById('status');
+            const progressBar = document.getElementById('progress');
+            
+            statusDiv.innerHTML = '<div class="status loading">⏳ Initializing...</div>';
+            progressBar.style.display = 'block';
+            
+            try {
+                const { MLCEngine } = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+                
+                statusDiv.innerHTML = '<div class="status loading">📥 Initializing engine...</div>';
+                
+                engine = new MLCEngine({
+                    initProgressCallback: (report) => {
+                        statusDiv.innerHTML = `<div class="status loading">📥 ${report.text}</div>`;
+                    }
+                });
+                
+                // Load the model - this downloads and caches it
+                statusDiv.innerHTML = '<div class="status loading">📥 Loading model (this may take several minutes)...</div>';
+                
+                await engine.reload('Qwen3-1.7B-q4f32_1-MLC');
+                
+                progressBar.style.display = 'none';
+                statusDiv.innerHTML = '<div class="status success">✅ Model cached successfully! Ready for the workshop.</div>';
+                
+                // Show test section after successful caching
+                document.getElementById('test-section').style.display = 'block';
+                
+            } catch (error) {
+                progressBar.style.display = 'none';
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                console.error('Full error:', error);
+            }
+        };
+
+        window.testModel = async function() {
+            const prompt = document.getElementById('prompt').value;
+            const testStatus = document.getElementById('test-status');
+            const responseDiv = document.getElementById('response');
+            
+            if (!prompt.trim()) {
+                testStatus.innerHTML = '<div class="status error">Please enter a prompt</div>';
+                return;
+            }
+
+            if (!engine) {
+                testStatus.innerHTML = '<div class="status error">Model not loaded. Please cache the model first.</div>';
+                return;
+            }
+
+            testStatus.innerHTML = '<div class="status loading">⏳ Generating response...</div>';
+            responseDiv.innerHTML = '';
+            
+            try {
+                const response = await engine.chat.completions.create({
+                    messages: [{ role: 'user', content: prompt }],
+                });
+                
+                const content = response.choices[0].message.content;
+                testStatus.innerHTML = '<div class="status success">✅ Response received!</div>';
+                responseDiv.innerHTML = `<div class="response"><strong>Prompt:</strong> ${prompt}\n\n<strong>Response:</strong> ${content}</div>`;
+                
+            } catch (error) {
+                testStatus.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>
